@@ -40,7 +40,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    getLocation(); // 🔥 自動取得
+    getLocation();
   }
 
   Future<void> getLocation() async {
@@ -58,12 +58,19 @@ class _SearchPageState extends State<SearchPage> {
         permission = await Geolocator.requestPermission();
       }
 
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          locationText = "位置情報が拒否されています";
+        });
+        return;
+      }
+
       Position position = await Geolocator.getCurrentPosition();
 
       setState(() {
         lat = position.latitude;
         lng = position.longitude;
-        locationText = "緯度: $lat\n経度: $lng";
+        locationText = "現在地取得済み"; // ←ここが変更点
       });
     } catch (e) {
       setState(() {
@@ -98,7 +105,13 @@ class _SearchPageState extends State<SearchPage> {
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            Text(locationText),
+            Text(
+              locationText,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
 
             const SizedBox(height: 20),
 
@@ -249,8 +262,47 @@ class _ResultPageState extends State<ResultPage> {
             ),
             title: Text(shop["name"]),
             subtitle: Text(shop["mobile_access"]),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailPage(shop: shop),
+                ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+}
+
+// ================= 詳細画面 =================
+class DetailPage extends StatelessWidget {
+  final dynamic shop;
+
+  const DetailPage({super.key, required this.shop});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(shop["name"])),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.network(
+                shop["photo"]["pc"]["l"],
+                errorBuilder: (_, __, ___) => const Icon(Icons.image),
+              ),
+              const SizedBox(height: 10),
+              Text("住所: ${shop["address"]}"),
+              Text("営業時間: ${shop["open"]}"),
+            ],
+          ),
+        ),
       ),
     );
   }
