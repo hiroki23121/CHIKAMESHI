@@ -70,7 +70,7 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         lat = position.latitude;
         lng = position.longitude;
-        locationText = "現在地取得済み"; // ←ここが変更点
+        locationText = "現在地取得済み";
       });
     } catch (e) {
       setState(() {
@@ -112,7 +112,6 @@ class _SearchPageState extends State<SearchPage> {
                 color: Colors.green,
               ),
             ),
-
             const SizedBox(height: 20),
 
             const Text("距離"),
@@ -182,7 +181,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// ================= 結果画面 =================
+// ================= 結果画面（インスタ風） =================
 class ResultPage extends StatefulWidget {
   final double lat;
   final double lng;
@@ -243,6 +242,7 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100], // ←インスタっぽく
       appBar: AppBar(title: const Text("検索結果")),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -253,15 +253,7 @@ class _ResultPageState extends State<ResultPage> {
         itemBuilder: (context, index) {
           final shop = shops[index];
 
-          return ListTile(
-            leading: Image.network(
-              shop["photo"]["mobile"]["s"],
-              width: 60,
-              errorBuilder: (_, __, ___) =>
-              const Icon(Icons.image),
-            ),
-            title: Text(shop["name"]),
-            subtitle: Text(shop["mobile_access"]),
+          return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
@@ -270,6 +262,72 @@ class _ResultPageState extends State<ResultPage> {
                 ),
               );
             },
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                    const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child: Image.network(
+                      shop["photo"]["pc"]["l"],
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                      const SizedBox(
+                        height: 180,
+                        child: Icon(Icons.image),
+                      ),
+                    ),
+                  ),
+
+                  Padding(
+                    padding:
+                    const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shop["name"],
+                          style:
+                          const TextStyle(
+                            fontSize: 18,
+                            fontWeight:
+                            FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          shop["mobile_access"],
+                          style:
+                          const TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -291,11 +349,13 @@ class DetailPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               Image.network(
                 shop["photo"]["pc"]["l"],
-                errorBuilder: (_, __, ___) => const Icon(Icons.image),
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.image),
               ),
               const SizedBox(height: 10),
               Text("住所: ${shop["address"]}"),
