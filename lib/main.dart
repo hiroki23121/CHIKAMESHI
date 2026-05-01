@@ -29,45 +29,50 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  String locationText = "現在地未取得";
+  String locationText = "現在地取得中...";
   String selectedRange = "3";
+  String selectedGenre = "";
+  String selectedBudget = "";
+
   double? lat;
   double? lng;
 
+  @override
+  void initState() {
+    super.initState();
+    getLocation(); // 🔥 自動取得
+  }
+
   Future<void> getLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          locationText = "位置情報がOFFです";
+        });
+        return;
+      }
 
-    if (!serviceEnabled) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      Position position = await Geolocator.getCurrentPosition();
+
       setState(() {
-        locationText = "位置情報がOFFです";
+        lat = position.latitude;
+        lng = position.longitude;
+        locationText = "緯度: $lat\n経度: $lng";
       });
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever) {
+    } catch (e) {
       setState(() {
-        locationText = "位置情報が拒否されています";
+        locationText = "取得失敗";
       });
-      return;
     }
-
-    Position position = await Geolocator.getCurrentPosition();
-
-    setState(() {
-      lat = position.latitude;
-      lng = position.longitude;
-      locationText = "緯度: $lat\n経度: $lng";
-    });
   }
 
   void goSearch() {
-    // GPS未取得なら大阪（保険）
     double useLat = lat ?? 34.67;
     double useLng = lng ?? 135.52;
 
@@ -78,6 +83,8 @@ class _SearchPageState extends State<SearchPage> {
           lat: useLat,
           lng: useLng,
           range: selectedRange,
+          genre: selectedGenre,
+          budget: selectedBudget,
         ),
       ),
     );
@@ -89,18 +96,13 @@ class _SearchPageState extends State<SearchPage> {
       appBar: AppBar(title: const Text("検索条件")),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
+        child: ListView(
           children: [
             Text(locationText),
-            const SizedBox(height: 10),
-
-            ElevatedButton(
-              onPressed: getLocation,
-              child: const Text("現在地取得"),
-            ),
 
             const SizedBox(height: 20),
 
+            const Text("距離"),
             DropdownButton<String>(
               value: selectedRange,
               items: const [
@@ -119,6 +121,43 @@ class _SearchPageState extends State<SearchPage> {
 
             const SizedBox(height: 20),
 
+            const Text("ジャンル"),
+            DropdownButton<String>(
+              value: selectedGenre,
+              items: const [
+                DropdownMenuItem(value: "", child: Text("指定なし")),
+                DropdownMenuItem(value: "G001", child: Text("居酒屋")),
+                DropdownMenuItem(value: "G004", child: Text("和食")),
+                DropdownMenuItem(value: "G005", child: Text("洋食")),
+                DropdownMenuItem(value: "G014", child: Text("カフェ")),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  selectedGenre = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text("予算"),
+            DropdownButton<String>(
+              value: selectedBudget,
+              items: const [
+                DropdownMenuItem(value: "", child: Text("指定なし")),
+                DropdownMenuItem(value: "B009", child: Text("〜1000円")),
+                DropdownMenuItem(value: "B010", child: Text("〜2000円")),
+                DropdownMenuItem(value: "B011", child: Text("〜3000円")),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  selectedBudget = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 30),
+
             ElevatedButton(
               onPressed: goSearch,
               child: const Text("検索"),
@@ -135,12 +174,16 @@ class ResultPage extends StatefulWidget {
   final double lat;
   final double lng;
   final String range;
+  final String genre;
+  final String budget;
 
   const ResultPage({
     super.key,
     required this.lat,
     required this.lng,
     required this.range,
+    required this.genre,
+    required this.budget,
   });
 
   @override
@@ -166,6 +209,8 @@ class _ResultPageState extends State<ResultPage> {
         "&lat=${widget.lat}"
         "&lng=${widget.lng}"
         "&range=${widget.range}"
+        "&genre=${widget.genre}"
+        "&budget=${widget.budget}"
         "&format=json";
 
     final response = await http.get(Uri.parse(url));
@@ -204,47 +249,8 @@ class _ResultPageState extends State<ResultPage> {
             ),
             title: Text(shop["name"]),
             subtitle: Text(shop["mobile_access"]),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetailPage(shop: shop),
-                ),
-              );
-            },
           );
         },
-      ),
-    );
-  }
-}
-
-// ================= 詳細画面 =================
-class DetailPage extends StatelessWidget {
-  final dynamic shop;
-
-  const DetailPage({super.key, required this.shop});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(shop["name"])),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Image.network(
-                shop["photo"]["pc"]["l"],
-                errorBuilder: (_, __, ___) => const Icon(Icons.image),
-              ),
-              const SizedBox(height: 10),
-              Text("住所: ${shop["address"]}"),
-              Text("営業時間: ${shop["open"]}"),
-            ],
-          ),
-        ),
       ),
     );
   }
