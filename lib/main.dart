@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 import 'api_key.dart';
 
 void main() {
@@ -181,7 +182,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// ================= 結果画面（インスタ風） =================
+// ================= 結果画面 =================
 class ResultPage extends StatefulWidget {
   final double lat;
   final double lng;
@@ -242,7 +243,7 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // ←インスタっぽく
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(title: const Text("検索結果")),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -272,7 +273,7 @@ class _ResultPageState extends State<ResultPage> {
                   BoxShadow(
                     color: Colors.black12,
                     blurRadius: 6,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   )
                 ],
               ),
@@ -286,7 +287,7 @@ class _ResultPageState extends State<ResultPage> {
                       top: Radius.circular(16),
                     ),
                     child: Image.network(
-                      shop["photo"]["pc"]["l"],
+                      shop["photo"]?["pc"]?["l"] ?? "",
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -297,7 +298,6 @@ class _ResultPageState extends State<ResultPage> {
                       ),
                     ),
                   ),
-
                   Padding(
                     padding:
                     const EdgeInsets.all(12),
@@ -306,7 +306,7 @@ class _ResultPageState extends State<ResultPage> {
                       CrossAxisAlignment.start,
                       children: [
                         Text(
-                          shop["name"],
+                          shop["name"] ?? "No Name",
                           style:
                           const TextStyle(
                             fontSize: 18,
@@ -316,7 +316,7 @@ class _ResultPageState extends State<ResultPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          shop["mobile_access"],
+                          shop["mobile_access"] ?? "",
                           style:
                           const TextStyle(
                             color: Colors.grey,
@@ -341,10 +341,20 @@ class DetailPage extends StatelessWidget {
 
   const DetailPage({super.key, required this.shop});
 
+  Future<void> makePhoneCall(String phoneNumber) async {
+    final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tel = shop["tel"] ?? "電話番号なし";
+
     return Scaffold(
-      appBar: AppBar(title: Text(shop["name"])),
+      appBar: AppBar(title: Text(shop["name"] ?? "No Name")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
@@ -353,13 +363,39 @@ class DetailPage extends StatelessWidget {
             CrossAxisAlignment.start,
             children: [
               Image.network(
-                shop["photo"]["pc"]["l"],
+                shop["photo"]?["pc"]?["l"] ?? "",
                 errorBuilder: (_, __, ___) =>
                 const Icon(Icons.image),
               ),
               const SizedBox(height: 10),
-              Text("住所: ${shop["address"]}"),
-              Text("営業時間: ${shop["open"]}"),
+
+              Text("住所: ${shop["address"] ?? "不明"}"),
+              Text("営業時間: ${shop["open"] ?? "不明"}"),
+
+              const SizedBox(height: 15),
+
+              tel == "電話番号なし"
+                  ? const Text("電話番号なし")
+                  : GestureDetector(
+                onTap: () {
+                  makePhoneCall(tel);
+                },
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone,
+                        color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text(
+                      tel,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        decoration:
+                        TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
