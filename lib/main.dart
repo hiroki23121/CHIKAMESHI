@@ -227,20 +227,7 @@ class _ResultPageState extends State<ResultPage> {
         "&format=json";
 
     final response = await http.get(Uri.parse(url));
-
-    // 🔥 APIの中身を全部表示
-    print("====== API RESPONSE ======");
-    print(response.body);
-
     final data = json.decode(response.body);
-
-    // 🔥 各店舗の電話番号チェック
-    if (data["results"] != null && data["results"]["shop"] != null) {
-      for (var shop in data["results"]["shop"]) {
-        print("店名: ${shop["name"]}");
-        print("電話番号: ${shop["tel"]}");
-      }
-    }
 
     setState(() {
       if (data["results"] != null &&
@@ -256,6 +243,7 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(title: const Text("検索結果")),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -266,9 +254,7 @@ class _ResultPageState extends State<ResultPage> {
         itemBuilder: (context, index) {
           final shop = shops[index];
 
-          return ListTile(
-            title: Text(shop["name"] ?? "No Name"),
-            subtitle: Text(shop["mobile_access"] ?? ""),
+          return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
@@ -277,6 +263,66 @@ class _ResultPageState extends State<ResultPage> {
                 ),
               );
             },
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                    const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child: Image.network(
+                      shop["photo"]?["pc"]?["l"] ?? "",
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Padding(
+                    padding:
+                    const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shop["name"] ?? "No Name",
+                          style:
+                          const TextStyle(
+                            fontSize: 18,
+                            fontWeight:
+                            FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          shop["mobile_access"] ?? "",
+                          style:
+                          const TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -290,41 +336,99 @@ class DetailPage extends StatelessWidget {
 
   const DetailPage({super.key, required this.shop});
 
-  Future<void> makePhoneCall(String phoneNumber) async {
-    final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
+  Future<void> makePhoneCall(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+  Future<void> openMap(String address) async {
+    final url =
+        "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}";
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> openWeb(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   @override
   Widget build(BuildContext context) {
-    final tel = shop["tel"] ?? "電話番号なし";
+    final tel = shop["tel"] ?? "";
+    final address = shop["address"] ?? "";
+    final site = shop["urls"]?["pc"] ?? "";
 
     return Scaffold(
-      appBar: AppBar(title: Text(shop["name"] ?? "No Name")),
+      appBar: AppBar(title: Text(shop["name"] ?? "")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
           children: [
-            Text("住所: ${shop["address"] ?? "不明"}"),
-            Text("営業時間: ${shop["open"] ?? "不明"}"),
-            const SizedBox(height: 20),
-
-            Text("電話: $tel"), // ← デバッグ表示
+            Image.network(shop["photo"]?["pc"]?["l"] ?? ""),
 
             const SizedBox(height: 10),
 
-            tel == "電話番号なし"
-                ? const Text("電話番号なし")
-                : ElevatedButton(
-              onPressed: () {
-                makePhoneCall(tel);
+            // ⭐ 住所 → マップ
+            GestureDetector(
+              onTap: () {
+                if (address.isNotEmpty) openMap(address);
               },
-              child: const Text("電話する"),
+              child: Text(
+                "住所: $address",
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
+
+            Text("営業時間: ${shop["open"] ?? ""}"),
+
+            const SizedBox(height: 15),
+
+            // ⭐ 電話 or サイト
+            tel.isNotEmpty
+                ? GestureDetector(
+              onTap: () => makePhoneCall(tel),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone,
+                      color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text(
+                    tel,
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration:
+                      TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            )
+                : site.isNotEmpty
+                ? GestureDetector(
+              onTap: () => openWeb(site),
+              child: Row(
+                children: const [
+                  Icon(Icons.language,
+                      color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text(
+                    "公式ページを見る",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      decoration:
+                      TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            )
+                : const Text("情報なし"),
           ],
         ),
       ),
