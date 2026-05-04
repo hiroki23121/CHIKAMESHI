@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ================= 検索画面 =================
+// ================= 検索画面（変更なし） =================
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -202,7 +202,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// ================= 検索結果（インスタ風） =================
+// ================= 検索結果（そのまま） =================
 class ResultPage extends StatefulWidget {
   final double lat;
   final double lng;
@@ -342,67 +342,137 @@ class _ResultPageState extends State<ResultPage> {
   }
 }
 
-// ================= 詳細画面 =================
+// ================= 詳細画面（ここだけ変更） =================
 class DetailPage extends StatelessWidget {
   final dynamic shop;
 
   const DetailPage({super.key, required this.shop});
 
-  // 🔥 修正ポイント（ここ）
   Future<void> openMap(String address) async {
-    final Uri uri = Uri.parse(
+    final uri = Uri.parse(
       "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}",
     );
-
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> call(String tel) async {
-    final Uri uri = Uri.parse("tel:$tel");
-
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final uri = Uri.parse("tel:$tel");
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   Future<void> openWeb(String url) async {
-    if (url.isEmpty) return;
-
-    final Uri uri = Uri.parse(url);
-
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final tel = shop["tel"];
-    final url = shop["urls"]?["pc"] ?? "";
+    final url = shop["urls"]?["pc"];
+    final image = shop["photo"]?["pc"]?["l"];
 
     return Scaffold(
-      appBar: AppBar(title: Text(shop["name"] ?? "No Name")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.grey[100],
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("住所: ${shop["address"] ?? "不明"}"),
-
-            GestureDetector(
-              onTap: () => openMap(shop["address"]),
-              child: const Text("地図で見る",
-                  style: TextStyle(color: Colors.blue)),
+            Stack(
+              children: [
+                Image.network(
+                  image ?? "",
+                  height: 250,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  height: 250,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black54, Colors.transparent],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  child: Text(
+                    shop["name"] ?? "No Name",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 10,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 10),
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 6)
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(shop["address"] ?? "不明")),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => openMap(shop["address"] ?? ""),
+                    child: const Text("地図で見る",
+                        style: TextStyle(color: Colors.blue)),
+                  ),
+                  const SizedBox(height: 16),
 
-            tel != null
-                ? GestureDetector(
-              onTap: () => call(tel),
-              child: Text("📞 $tel",
-                  style: const TextStyle(color: Colors.blue)),
-            )
-                : GestureDetector(
-              onTap: () => openWeb(url),
-              child: const Text("公式サイトを見る",
-                  style: TextStyle(color: Colors.blue)),
+                  tel != null
+                      ? GestureDetector(
+                    onTap: () => call(tel),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.phone, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text(tel,
+                            style: const TextStyle(
+                                color: Colors.blue,
+                                decoration:
+                                TextDecoration.underline)),
+                      ],
+                    ),
+                  )
+                      : GestureDetector(
+                    onTap: () => openWeb(url ?? ""),
+                    child: const Text("公式サイトを見る",
+                        style: TextStyle(color: Colors.blue)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
