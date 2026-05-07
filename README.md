@@ -15,3 +15,10 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+## APIキーの設定
+lib/api_key.dart ファイルを作成し、ファイルの中に以下を記載してください。
+
+```dart
+const String API_KEY = "ご自身のAPIキー";
