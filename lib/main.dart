@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
 }
 
 // ================= 検索画面 =================
+
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -50,7 +51,9 @@ class _SearchPageState extends State<SearchPage> {
       await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
-        setState(() => locationText = "位置情報がOFFです");
+        setState(() {
+          locationText = "位置情報がOFFです";
+        });
         return;
       }
 
@@ -58,13 +61,13 @@ class _SearchPageState extends State<SearchPage> {
       await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        permission =
-        await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission();
       }
 
-      if (permission ==
-          LocationPermission.deniedForever) {
-        setState(() => locationText = "位置情報が拒否されています");
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          locationText = "位置情報が拒否されています";
+        });
         return;
       }
 
@@ -77,7 +80,9 @@ class _SearchPageState extends State<SearchPage> {
         locationText = "現在地取得済み";
       });
     } catch (e) {
-      setState(() => locationText = "取得失敗");
+      setState(() {
+        locationText = "取得失敗";
+      });
     }
   }
 
@@ -99,20 +104,92 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  // ================= ジャンルアイコン（変更済み） =================
+  Widget genreIconButton({
+    required String label,
+    required String imagePath,
+    required String genreCode,
+  }) {
+    final isSelected = selectedGenre == genreCode;
+    final isAll = genreCode == "";
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedGenre = genreCode;
+        });
+      },
+      child: Container(
+        width: 90,
+        margin: const EdgeInsets.only(right: 14),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: isSelected
+                    ? Border.all(
+                  color: Colors.orange,
+                  width: 4,
+                )
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: isSelected ? 12 : 6,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+
+              // ===================== 修正ポイント =====================
+              child: ClipOval(
+                child: Transform.scale(
+                  // ★ここで「先に強く拡大」
+                  scale: isAll ? 1.8 : 1.5,
+                  child: Center(
+                    child: Image.asset(
+                      imagePath,
+                      fit: BoxFit.cover, // ← 重要（引き伸ばし）
+                      width: 80,
+                      height: 80,
+                    ),
+                  ),
+                ),
+              ),
+              // =======================================================
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFD4E09B),
-
+      backgroundColor: const Color(0xFFD4E09B),
       appBar: AppBar(
-        backgroundColor:
-        const Color(0xFFD4E09B),
+        backgroundColor: const Color(0xFFD4E09B),
         elevation: 0,
-        scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme:
-        const IconThemeData(color: Colors.black),
         title: const Text(
           "ちかめし",
           style: TextStyle(
@@ -121,49 +198,34 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
             "近くのおいしいを、すぐに",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.black54,
-            ),
+            style: TextStyle(color: Colors.black54),
           ),
 
           const SizedBox(height: 20),
 
           Container(
-            padding:
-            const EdgeInsets.all(18),
-
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius:
-              BorderRadius.circular(28),
-
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black
-                      .withOpacity(0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 20,
-                  offset:
-                  const Offset(0, 8),
-                )
+                  offset: const Offset(0, 8),
+                ),
               ],
             ),
-
             child: Row(
               children: [
-                const Icon(
-                  Icons.location_on,
-                  color: Colors.orange,
-                ),
-
+                const Icon(Icons.location_on, color: Colors.orange),
                 const SizedBox(width: 10),
-
                 Text(locationText),
               ],
             ),
@@ -171,20 +233,14 @@ class _SearchPageState extends State<SearchPage> {
 
           const SizedBox(height: 24),
 
-          const Text(
-            "距離",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text("距離",
+              style: TextStyle(fontWeight: FontWeight.bold)),
 
           const SizedBox(height: 10),
 
           Wrap(
             spacing: 8,
-            children:
-            ["1", "2", "3", "4", "5"]
-                .map((v) {
+            children: ["1", "2", "3", "4", "5"].map((v) {
               final labels = {
                 "1": "300m",
                 "2": "500m",
@@ -195,21 +251,12 @@ class _SearchPageState extends State<SearchPage> {
 
               return ChoiceChip(
                 label: Text(labels[v]!),
-                selected:
-                selectedRange == v,
-                selectedColor:
-                const Color(
-                    0xFFFFCC80),
-                backgroundColor:
-                Colors.white,
-
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius
-                      .circular(20),
+                selected: selectedRange == v,
+                selectedColor: const Color(0xFFFFCC80),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-
                 onSelected: (_) {
                   setState(() {
                     selectedRange = v;
@@ -221,64 +268,49 @@ class _SearchPageState extends State<SearchPage> {
 
           const SizedBox(height: 24),
 
-          const Text(
-            "ジャンル",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text("ジャンル",
+              style: TextStyle(fontWeight: FontWeight.bold)),
 
           const SizedBox(height: 10),
 
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              {"": "指定なし"},
-              {"G001": "居酒屋"},
-              {"G004": "和食"},
-              {"G005": "洋食"},
-              {"G014": "カフェ"},
-            ].map((map) {
-              final key = map.keys.first;
-              final label = map.values.first;
-
-              return ChoiceChip(
-                label: Text(label),
-                selected:
-                selectedGenre == key,
-
-                selectedColor:
-                const Color(
-                    0xFFFFCC80),
-
-                backgroundColor:
-                Colors.white,
-
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius
-                      .circular(20),
+          SizedBox(
+            height: 110,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                genreIconButton(
+                  label: "指定なし",
+                  imagePath: "assets/icons/all.png",
+                  genreCode: "",
                 ),
-
-                onSelected: (_) {
-                  setState(() {
-                    selectedGenre = key;
-                  });
-                },
-              );
-            }).toList(),
+                genreIconButton(
+                  label: "居酒屋",
+                  imagePath: "assets/icons/izakaya.png",
+                  genreCode: "G001",
+                ),
+                genreIconButton(
+                  label: "和食",
+                  imagePath: "assets/icons/washoku.png",
+                  genreCode: "G004",
+                ),
+                genreIconButton(
+                  label: "洋食",
+                  imagePath: "assets/icons/yoshoku.png",
+                  genreCode: "G005",
+                ),
+                genreIconButton(
+                  label: "カフェ",
+                  imagePath: "assets/icons/cafe.png",
+                  genreCode: "G014",
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 24),
 
-          const Text(
-            "予算",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text("予算",
+              style: TextStyle(fontWeight: FontWeight.bold)),
 
           const SizedBox(height: 10),
 
@@ -296,23 +328,12 @@ class _SearchPageState extends State<SearchPage> {
 
               return ChoiceChip(
                 label: Text(label),
-                selected:
-                selectedBudget == key,
-
-                selectedColor:
-                const Color(
-                    0xFFFFCC80),
-
-                backgroundColor:
-                Colors.white,
-
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius
-                      .circular(20),
+                selected: selectedBudget == key,
+                selectedColor: const Color(0xFFFFCC80),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-
                 onSelected: (_) {
                   setState(() {
                     selectedBudget = key;
@@ -326,35 +347,21 @@ class _SearchPageState extends State<SearchPage> {
 
           SizedBox(
             height: 58,
-
             child: ElevatedButton(
-              style:
-              ElevatedButton.styleFrom(
-                backgroundColor:
-                Colors.orange,
-
-                foregroundColor:
-                Colors.white,
-
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
                 elevation: 0,
-
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius
-                      .circular(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
-
               onPressed: goSearch,
-
               child: const Text(
                 "お店を探す",
-
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight:
-                  FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -366,6 +373,7 @@ class _SearchPageState extends State<SearchPage> {
 }
 
 // ================= 検索結果 =================
+
 class ResultPage extends StatefulWidget {
   final double lat;
   final double lng;
@@ -383,12 +391,10 @@ class ResultPage extends StatefulWidget {
   });
 
   @override
-  State<ResultPage> createState() =>
-      _ResultPageState();
+  State<ResultPage> createState() => _ResultPageState();
 }
 
-class _ResultPageState
-    extends State<ResultPage> {
+class _ResultPageState extends State<ResultPage> {
   List shops = [];
   bool isLoading = true;
 
@@ -409,14 +415,11 @@ class _ResultPageState
         "&budget=${widget.budget}"
         "&format=json";
 
-    final res =
-    await http.get(Uri.parse(url));
-
+    final res = await http.get(Uri.parse(url));
     final data = json.decode(res.body);
 
     setState(() {
-      shops =
-          data["results"]?["shop"] ?? [];
+      shops = data["results"]?["shop"] ?? [];
       isLoading = false;
     });
   }
@@ -424,46 +427,23 @@ class _ResultPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFD4E09B),
-
+      backgroundColor: const Color(0xFFD4E09B),
       appBar: AppBar(
-        backgroundColor:
-        const Color(0xFFD4E09B),
+        backgroundColor: const Color(0xFFD4E09B),
         elevation: 0,
-        scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme:
-        const IconThemeData(color: Colors.black),
-        title: const Text(
-          "検索結果",
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text("検索結果",
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            )),
       ),
-
       body: isLoading
-          ? const Center(
-        child:
-        CircularProgressIndicator(
-          color: Colors.orange,
-        ),
-      )
-          : shops.isEmpty
-          ? const Center(
-        child:
-        Text("お店が見つかりません"),
-      )
+          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
           : ListView.builder(
-        padding:
-        const EdgeInsets.all(16),
-
+        padding: const EdgeInsets.all(16),
         itemCount: shops.length,
-
-        itemBuilder:
-            (context, i) {
+        itemBuilder: (context, i) {
           final shop = shops[i];
 
           return GestureDetector(
@@ -471,119 +451,60 @@ class _ResultPageState
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      DetailPage(
-                        shop: shop,
-                      ),
+                  builder: (_) => DetailPage(shop: shop),
                 ),
               );
             },
-
             child: Container(
-              margin:
-              const EdgeInsets.only(
-                  bottom: 20),
-
-              decoration:
-              BoxDecoration(
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
                 color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(
-                    28),
-
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black
-                        .withOpacity(
-                        0.08),
-
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 20,
-
-                    offset:
-                    const Offset(
-                        0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius:
-                    const BorderRadius
-                        .vertical(
-                      top: Radius.circular(
-                          28),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
                     ),
-
                     child: Image.network(
-                      shop["photo"]?["pc"]
-                      ?["l"] ??
-                          "",
-
+                      shop["photo"]?["pc"]?["l"] ?? "",
                       height: 220,
-                      width:
-                      double.infinity,
+                      width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   ),
-
                   Padding(
-                    padding:
-                    const EdgeInsets
-                        .all(16),
-
+                    padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          shop["name"] ??
-                              "No Name",
-
-                          style:
-                          const TextStyle(
+                          shop["name"] ?? "No Name",
+                          style: const TextStyle(
                             fontSize: 18,
-                            fontWeight:
-                            FontWeight
-                                .bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-
-                        const SizedBox(
-                            height: 8),
-
+                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(
-                              Icons
-                                  .location_on,
-                              size: 18,
-                              color: Colors
-                                  .orange,
-                            ),
-
-                            const SizedBox(
-                                width:
-                                4),
-
+                            const Icon(Icons.location_on,
+                                size: 18, color: Colors.orange),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                shop["mobile_access"] ??
-                                    "",
-
-                                style:
-                                const TextStyle(
-                                  color: Colors
-                                      .black54,
-                                ),
+                                shop["mobile_access"] ?? "",
+                                style: const TextStyle(
+                                    color: Colors.black54),
                               ),
                             ),
                           ],
@@ -602,13 +523,11 @@ class _ResultPageState
 }
 
 // ================= 詳細画面 =================
+
 class DetailPage extends StatelessWidget {
   final dynamic shop;
 
-  const DetailPage({
-    super.key,
-    required this.shop,
-  });
+  const DetailPage({super.key, required this.shop});
 
   Future<void> openMap(String address) async {
     final uri = Uri.parse(
@@ -616,10 +535,8 @@ class DetailPage extends StatelessWidget {
     );
 
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri,
+          mode: LaunchMode.externalApplication);
     }
   }
 
@@ -635,10 +552,8 @@ class DetailPage extends StatelessWidget {
     final uri = Uri.parse(url);
 
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri,
+          mode: LaunchMode.externalApplication);
     }
   }
 
@@ -646,13 +561,10 @@ class DetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final tel = shop["tel"];
     final url = shop["urls"]?["pc"];
-    final image =
-    shop["photo"]?["pc"]?["l"];
+    final image = shop["photo"]?["pc"]?["l"];
 
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFD4E09B),
-
+      backgroundColor: const Color(0xFFD4E09B),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -660,65 +572,39 @@ class DetailPage extends StatelessWidget {
               children: [
                 Image.network(
                   image ?? "",
-                  height: 300,
+                  height: 320,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
-
                 Container(
-                  height: 300,
-
-                  decoration:
-                  const BoxDecoration(
-                    gradient:
-                    LinearGradient(
-                      begin:
-                      Alignment
-                          .bottomCenter,
-                      end:
-                      Alignment
-                          .topCenter,
-
-                      colors: [
-                        Colors.black54,
-                        Colors.transparent
-                      ],
+                  height: 320,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black54, Colors.transparent],
                     ),
                   ),
                 ),
-
                 Positioned(
                   top: 45,
                   left: 10,
-
                   child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
-
-                    onPressed: () {
-                      Navigator.pop(
-                          context);
-                    },
+                    icon: const Icon(Icons.arrow_back,
+                        color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
-
                 Positioned(
                   bottom: 24,
                   left: 20,
                   right: 20,
-
                   child: Text(
-                    shop["name"] ??
-                        "No Name",
-
-                    style:
-                    const TextStyle(
+                    shop["name"] ?? "No Name",
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 26,
-                      fontWeight:
-                      FontWeight.bold,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -726,174 +612,94 @@ class DetailPage extends StatelessWidget {
             ),
 
             Container(
-              margin:
-              const EdgeInsets.fromLTRB(
-                  16, 20, 16, 20),
-
-              padding:
-              const EdgeInsets.all(22),
-
+              margin: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(
-                    30),
-
+                borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black
-                        .withOpacity(0.08),
-
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 20,
-
-                    offset:
-                    const Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "店舗情報",
-
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight:
-                      FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                      height: 20),
-
+                  const Text("店舗情報",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      )),
+                  const SizedBox(height: 24),
                   Row(
-                    crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.orange,
-                      ),
-
-                      const SizedBox(
-                          width: 10),
-
+                      const Icon(Icons.location_on,
+                          color: Colors.orange),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          shop["address"] ??
-                              "不明",
-
-                          style:
-                          const TextStyle(
-                            height: 1.5,
+                          shop["address"] ?? "不明",
+                          style: const TextStyle(
+                            height: 1.6,
+                            fontSize: 15,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 18),
                   GestureDetector(
                     onTap: () =>
-                        openMap(
-                            shop["address"] ??
-                                ""),
-
+                        openMap(shop["address"] ?? ""),
                     child: Container(
-                      padding:
-                      const EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 18,
-                        vertical: 12,
+                        vertical: 14,
                       ),
-
                       decoration: BoxDecoration(
-                        color:
-                        const Color(
-                            0xFFFFF3E0),
-
-                        borderRadius:
-                        BorderRadius.circular(
-                            16),
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(18),
                       ),
-
                       child: const Row(
-                        mainAxisSize:
-                        MainAxisSize.min,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.map,
-                            color:
-                            Colors.orange,
-                          ),
+                          Icon(Icons.map, color: Colors.orange),
                           SizedBox(width: 8),
-                          Text(
-                            "地図で見る",
-                            style: TextStyle(
-                              color:
-                              Colors.orange,
-                              fontWeight:
-                              FontWeight.bold,
-                            ),
-                          ),
+                          Text("地図で見る",
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              )),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  tel != null
+                  tel != null && tel != ""
                       ? GestureDetector(
-                    onTap: () =>
-                        call(tel),
-
+                    onTap: () => call(tel),
                     child: Container(
-                      padding:
-                      const EdgeInsets
-                          .all(16),
-
-                      decoration:
-                      BoxDecoration(
-                        color:
-                        const Color(
-                            0xFFF5F5F5),
-
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
                         borderRadius:
-                        BorderRadius
-                            .circular(
-                            20),
+                        BorderRadius.circular(20),
                       ),
-
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.phone,
-                            color: Colors
-                                .green,
-                          ),
-
-                          const SizedBox(
-                              width: 10),
-
+                          const Icon(Icons.phone,
+                              color: Colors.green),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               tel,
-                              style:
-                              const TextStyle(
-                                fontSize:
-                                16,
-                                fontWeight:
-                                FontWeight
-                                    .bold,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -903,48 +709,25 @@ class DetailPage extends StatelessWidget {
                   )
                       : GestureDetector(
                     onTap: () =>
-                        openWeb(
-                            url ?? ""),
-
+                        openWeb(url ?? ""),
                     child: Container(
-                      padding:
-                      const EdgeInsets
-                          .all(16),
-
-                      decoration:
-                      BoxDecoration(
-                        color:
-                        const Color(
-                            0xFFFFF3E0),
-
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
                         borderRadius:
-                        BorderRadius
-                            .circular(
-                            20),
+                        BorderRadius.circular(20),
                       ),
-
                       child: const Row(
                         children: [
-                          Icon(
-                            Icons.language,
-                            color: Colors
-                                .orange,
-                          ),
-
-                          SizedBox(
-                              width: 10),
-
-                          Text(
-                            "公式サイトを見る",
-                            style:
-                            TextStyle(
-                              color: Colors
-                                  .orange,
-                              fontWeight:
-                              FontWeight
-                                  .bold,
-                            ),
-                          ),
+                          Icon(Icons.language,
+                              color: Colors.orange),
+                          SizedBox(width: 10),
+                          Text("公式サイトを見る",
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight:
+                                FontWeight.bold,
+                              )),
                         ],
                       ),
                     ),
